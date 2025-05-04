@@ -1,0 +1,42 @@
+---
+- name: Install nginx
+  apt:
+    name: nginx
+    state: present
+    update_cache: yes
+
+- name: Copy website files
+  copy:
+    src: files/website/
+    dest: /var/www/html/
+    owner: www-data
+    group: www-data
+    mode: '0644'
+
+- name: Configure nginx
+  template:
+    src: templates/nginx.conf.j2
+    dest: /etc/nginx/sites-available/default
+  notify: restart nginx
+
+- name: Install Node Exporter
+  ansible.builtin.get_url:
+    url: https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-amd64.tar.gz
+    dest: /tmp/node_exporter.tar.gz
+
+- name: Extract Node Exporter
+  ansible.builtin.unarchive:
+    src: /tmp/node_exporter.tar.gz
+    dest: /opt/
+    remote_src: yes
+
+- name: Create systemd service for Node Exporter
+  template:
+    src: templates/node_exporter.service.j2
+    dest: /etc/systemd/system/node_exporter.service
+
+- name: Enable and start Node Exporter
+  systemd:
+    name: node_exporter
+    state: started
+    enabled: yes

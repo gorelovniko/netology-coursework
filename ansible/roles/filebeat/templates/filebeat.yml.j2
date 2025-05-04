@@ -1,0 +1,28 @@
+filebeat.inputs:
+- type: log
+  enabled: true
+  paths:
+    - /var/log/nginx/access.log
+  fields:
+    type: nginx-access
+
+- type: log
+  enabled: true
+  paths:
+    - /var/log/nginx/error.log
+  fields:
+    type: nginx-error
+
+output.elasticsearch:
+  hosts: ["{{ elasticsearch_host }}:9200"]
+  indices:
+    - index: "nginx-access-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.type: "nginx-access"
+    - index: "nginx-error-%{+yyyy.MM.dd}"
+      when.equals:
+        fields.type: "nginx-error"
+
+setup.template:
+  name: "nginx"
+  pattern: "nginx-*"

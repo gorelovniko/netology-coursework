@@ -1,0 +1,25 @@
+---
+- hosts: webservers
+#  become: yes
+  roles:
+    - webserver
+    - filebeat
+
+- hosts: prometheus
+#  become: yes
+  roles:
+    - prometheus
+
+- hosts: grafana
+#  become: yes
+  roles:
+    - grafana
+- hosts: elasticsearch
+#  become: yes
+  roles:
+    - elasticsearch
+
+- hosts: kibana
+#  become: yes
+  roles:
+    - kibana
