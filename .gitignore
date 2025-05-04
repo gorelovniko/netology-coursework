@@ -1,0 +1,15 @@
+# Local .terraform directories and files
+**/.terraform/*
+.terraform*
+
+!.terraformrc
+
+# .tfstate files
+*.tfstate
+*.tfstate.*
+
+# Other important files
+terraform.tfvars
+authorized_key.json
+*/ssh-key/*
+cloud-init.yml

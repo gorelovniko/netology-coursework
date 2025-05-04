@@ -1,0 +1,7 @@
+users:
+  - name: user   # Имя нового пользователя
+    groups: sudo  # Добавляем в группу sudo
+    shell: /bin/bash
+    sudo: ["ALL=(ALL) NOPASSWD:ALL"]
+    ssh_authorized_keys: #ваш_публичный_ключ
+      - <ssh_authorized_keys>
