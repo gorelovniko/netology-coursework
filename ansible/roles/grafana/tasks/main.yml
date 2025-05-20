@@ -1,0 +1,151 @@
+---
+- name: Установка зависимостей
+  apt:
+    name:
+      - docker
+      # - docker-compose
+    state: present
+    update_cache: yes
+
+- name: Ensure directories exist
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: 472
+    group: 472
+    mode: '0755'
+  loop:
+    - "{{ grafana_data_dir }}"
+    - "{{ grafana_config_dir }}/provisioning/dashboards"
+    - "{{ grafana_config_dir }}/provisioning/datasources"
+
+- name: Создание базового конфига grafana.ini
+  copy:
+    dest: "{{ grafana_config_dir }}/grafana.ini"
+    content: |
+      [security]
+      admin_user = {{ grafana_admin_user }}
+      admin_password = {{ grafana_admin_password }}
+      [users]
+      allow_sign_up = false
+      [server]
+      protocol = http
+      http_port = 3000
+    owner: 472
+    group: 472
+    mode: '0644'
+
+- name: Deploy Grafana datasource configuration
+  template:
+    src: datasources.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/datasources/datasources.yml"
+    owner: 472
+    group: 472
+    mode: '0644'
+  notify: Restart Grafana container
+
+- name: Deploy dashboard provider configuration
+  template:
+    src: dashboard-provider.yml.j2
+    dest: "{{ grafana_config_dir }}/provisioning/dashboards/provider.yml"
+    owner: 472
+    group: 472
+    mode: '0644'
+  notify: Restart Grafana container
+
+- name: Pull Grafana image
+  community.docker.docker_image:
+    name: "{{ grafana_image }}"
+    tag: "{{ grafana_version }}"
+    source: pull
+
+- name: Run Grafana container
+  community.docker.docker_container:
+    name: "{{ grafana_container_name }}"
+    image: "{{ grafana_image }}:{{ grafana_version }}"
+    state: started
+    restart_policy: "{{ grafana_restart_policy }}"
+    ports:
+      - "{{ grafana_port }}:3000"
+    volumes:
+      - "{{ grafana_data_dir }}:/var/lib/grafana"
+      - "{{ grafana_config_dir }}:/etc/grafana"
+    env:
+      GF_SECURITY_ADMIN_PASSWORD: "{{ grafana_admin_password | default('admin') }}"
+
+- name: Deploy Node-Exporter Dashboard in Grafana
+  block:
+    - name: Download Node-Exporter Dashboard JSON
+      ansible.builtin.uri:
+        url: "{{ node_exporter_dashboard_json }}"
+        return_content: yes
+      register: dashboard_json
+      until: dashboard_json.status == 200
+      retries: 3
+      delay: 5
+
+    - name: Save dashboard to temporary file
+      ansible.builtin.copy:
+        dest: "/tmp/node_exporter_dashboard.json"
+        content: "{{ dashboard_json.json | to_nice_json }}"
+        mode: '0644'
+
+    - name: Wait for Grafana to become available
+      uri:
+        url: "http://localhost:3000/api/health"
+        method: GET
+        status_code: 200
+        timeout: 5
+      register: grafana_health
+      until: grafana_health.status == 200
+      retries: 12
+      delay: 5
+      changed_when: false
+
+    - name: Import dashboard using file method
+      community.grafana.grafana_dashboard:
+        grafana_url: "{{ grafana_url }}"
+        url_username: "{{ grafana_admin_user }}"
+        url_password: "{{ grafana_admin_password }}"
+        path: "/tmp/node_exporter_dashboard.json"
+        state: present
+        overwrite: yes
+      register: dashboard_result
+      when: grafana_health.status == 200
+
+    - name: Cleanup temporary file
+      ansible.builtin.file:
+        path: "/tmp/node_exporter_dashboard.json"
+        state: absent
+
+- name: Deploy Nginx-log-Exporter Dashboard in Grafana
+  block:
+    - name: Download Nginx-Exporter Dashboard JSON
+      ansible.builtin.uri:
+        url: "{{ nginx_exporter }}"
+        return_content: yes
+      register: dashboard_json
+      until: dashboard_json.status == 200
+      retries: 3
+      delay: 5
+
+    - name: Save dashboard to temporary file
+      ansible.builtin.copy:
+        dest: "/tmp/nginx_exporter.json"
+        content: "{{ dashboard_json.json | to_nice_json }}"
+        mode: '0644'
+
+    - name: Import dashboard using file method
+      community.grafana.grafana_dashboard:
+        grafana_url: "{{ grafana_url }}"
+        url_username: "{{ grafana_admin_user }}"
+        url_password: "{{ grafana_admin_password }}"
+        path: "/tmp/nginx_exporter.json"
+        state: present
+        overwrite: yes
+      register: dashboard_result
+
+    - name: Cleanup temporary file
+      ansible.builtin.file:
+        path: "/tmp/nginx_exporter.json"
+        state: absent

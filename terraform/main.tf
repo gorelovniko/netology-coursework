@@ -86,7 +86,7 @@ resource "yandex_compute_instance" "web-srv-2" {
 resource "yandex_compute_instance" "prometheus" {
   name        = "prometheus"
   hostname    = "prometheus"
-  zone        = "ru-central1-a"
+  zone        = "ru-central1-d"
   platform_id = "standard-v3"
 
   resources {
@@ -103,11 +103,9 @@ resource "yandex_compute_instance" "prometheus" {
   }
 
   network_interface {
-    subnet_id          = yandex_vpc_subnet.network_a.id
+    subnet_id          = yandex_vpc_subnet.network_d.id
     nat                = false
     security_group_ids = [yandex_vpc_security_group.prometheus-sg.id, yandex_vpc_security_group.ssh-traffic-sg.id]
-    # security_group_ids = [yandex_vpc_security_group.security-ssh-traffic.id, yandex_vpc_security_group.security-prometheus.id]
-    # ip_address         = "10.0.3.3"
   }
 
   metadata = {
@@ -143,8 +141,6 @@ resource "yandex_compute_instance" "grafana" {
     subnet_id          = yandex_vpc_subnet.network_d.id
     nat                = true
     security_group_ids = [yandex_vpc_security_group.grafana-sg.id, yandex_vpc_security_group.ssh-traffic-sg.id]
-    # security_group_ids = [yandex_vpc_security_group.security-public-grafana.id, yandex_vpc_security_group.security-ssh-traffic.id]
-    # ip_address         = "10.0.3.5"
   }
 
   metadata = {
@@ -180,8 +176,6 @@ resource "yandex_compute_instance" "elasticsearch" {
     subnet_id          = yandex_vpc_subnet.network_a.id
     nat                = false
     security_group_ids = [yandex_vpc_security_group.elasticsearch-sg.id, yandex_vpc_security_group.ssh-traffic-sg.id]
-    # security_group_ids = [yandex_vpc_security_group.security-elasticsearch.id, yandex_vpc_security_group.security-ssh-traffic.id]
-    # ip_address         = "10.0.1.4"
   }
 
   metadata = {
@@ -197,13 +191,13 @@ resource "yandex_compute_instance" "elasticsearch" {
 resource "yandex_compute_instance" "kibana" {
   name     = "kibana"
   hostname = "kibana"
-  zone     = "ru-central1-d"
+  zone     = "ru-central1-a"
   platform_id = "standard-v3"
   
   resources {
-    cores         = 2
+    cores         = 4
     memory        = 4
-    core_fraction = 20
+    core_fraction = 50
   }
 
   boot_disk {
@@ -214,11 +208,9 @@ resource "yandex_compute_instance" "kibana" {
   }
 
   network_interface {
-    subnet_id          = yandex_vpc_subnet.network_d.id
+    subnet_id          = yandex_vpc_subnet.network_a.id
     nat                = true
     security_group_ids = [yandex_vpc_security_group.kibana-sg.id, yandex_vpc_security_group.ssh-traffic-sg.id]
-    # security_group_ids = [yandex_vpc_security_group.security-public-kibana.id, yandex_vpc_security_group.security-ssh-traffic.id]
-    # ip_address         = "10.0.3.6"
   }
 
   metadata = {
@@ -254,7 +246,6 @@ resource "yandex_compute_instance" "bastion" {
   network_interface {
     subnet_id = yandex_vpc_subnet.network_d.id
     nat       = true
-    # security_group_ids = [yandex_vpc_security_group.LAN.id, yandex_vpc_security_group.bastion.id]
     security_group_ids = [yandex_vpc_security_group.bastion-sg.id]
   }
 
@@ -271,24 +262,24 @@ resource "yandex_compute_instance" "bastion" {
 
 resource "local_file" "inventory" {
   content  = <<-EOT
-    [bastion]
-    ${yandex_compute_instance.bastion.network_interface.0.ip_address} public_ip=${yandex_compute_instance.bastion.network_interface.0.nat_ip_address} 
+    [bastion_gp]
+    bastion ansible_host=${yandex_compute_instance.bastion.network_interface.0.ip_address} public_ip=${yandex_compute_instance.bastion.network_interface.0.nat_ip_address} 
 
-    [web]
-    ${yandex_compute_instance.web-srv-1.network_interface.0.ip_address}
-    ${yandex_compute_instance.web-srv-2.network_interface.0.ip_address}
+    [webservers_gp]
+    web-srv-1 ansible_host=${yandex_compute_instance.web-srv-1.network_interface.0.ip_address}
+    web-srv-2 ansible_host=${yandex_compute_instance.web-srv-2.network_interface.0.ip_address}
    
-    [prometheus]
-    ${yandex_compute_instance.prometheus.network_interface.0.ip_address}
+    [prometheus_gp]
+    prometheus ansible_host=${yandex_compute_instance.prometheus.network_interface.0.ip_address}
 
-    [grafana]
-    ${yandex_compute_instance.grafana.network_interface.0.ip_address} public_ip=${yandex_compute_instance.grafana.network_interface.0.nat_ip_address} 
+    [grafana_gp]
+    grafana ansible_host=${yandex_compute_instance.grafana.network_interface.0.ip_address} public_ip=${yandex_compute_instance.grafana.network_interface.0.nat_ip_address} 
 
-    [elasticsearch]
-    ${yandex_compute_instance.elasticsearch.network_interface.0.ip_address}
+    [elasticsearch_gp]
+    elasticsearch ansible_host=${yandex_compute_instance.elasticsearch.network_interface.0.ip_address}
 
-    [kibana]
-    ${yandex_compute_instance.kibana.network_interface.0.ip_address} public_ip=${yandex_compute_instance.kibana.network_interface.0.nat_ip_address} 
+    [kibana_gp]
+    kibana ansible_host=${yandex_compute_instance.kibana.network_interface.0.ip_address} public_ip=${yandex_compute_instance.kibana.network_interface.0.nat_ip_address} 
     
     [all:vars]
     ansible_ssh_common_args='-o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o ProxyCommand="ssh -p 22 -W %h:%p -q nimda@${yandex_compute_instance.bastion.network_interface.0.nat_ip_address}"'

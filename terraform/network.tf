@@ -13,15 +13,6 @@ resource "yandex_vpc_subnet" "network_a" {
   route_table_id = yandex_vpc_route_table.rt.id
 }
 
-# #создаем подсеть zone B
-# resource "yandex_vpc_subnet" "network_b" {
-#   name           = "network-fops-ru-central1-b"
-#   zone           = "ru-central1-b"
-#   network_id     = yandex_vpc_network.network.id
-#   v4_cidr_blocks = ["10.0.20.0/24"]
-#   route_table_id = yandex_vpc_route_table.rt.id
-# }
-
 #создаем подсеть zone C
 resource "yandex_vpc_subnet" "network_d" {
   name           = "network-fops-ru-central1-d"

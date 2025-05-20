@@ -5,24 +5,39 @@
     state: present
     update_cache: yes
 
-- name: Copy website files
-  copy:
-    src: files/website/
-    dest: /var/www/html/
+- name: Configure nginx stub_status
+  template:
+    src: templates/nginx_status.conf.j2
+    dest: /etc/nginx/conf.d/stub_status.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: restart nginx
+
+- name: Create custom index.html from template
+  ansible.builtin.template:
+    src: files/index.html.j2
+    dest: /var/www/html/index.html
     owner: www-data
     group: www-data
     mode: '0644'
-
-- name: Configure nginx
-  template:
-    src: templates/nginx.conf.j2
-    dest: /etc/nginx/sites-available/default
   notify: restart nginx
 
+
+# Node Exporter section
 - name: Install Node Exporter
   ansible.builtin.get_url:
     url: https://github.com/prometheus/node_exporter/releases/download/v1.3.1/node_exporter-1.3.1.linux-amd64.tar.gz
     dest: /tmp/node_exporter.tar.gz
+
+- name: Create node_exporter user and group
+  user:
+    name: node_exporter
+    system: yes
+    shell: /usr/sbin/nologin
+    comment: "Node Exporter service account"
+    create_home: no
+    home: /nonexistent
 
 - name: Extract Node Exporter
   ansible.builtin.unarchive:
@@ -35,8 +50,62 @@
     src: templates/node_exporter.service.j2
     dest: /etc/systemd/system/node_exporter.service
 
+- name: Set proper permissions for Node Exporter
+  file:
+    path: "/opt/node_exporter-{{ node_exporter_version }}.linux-amd64"
+    owner: node_exporter
+    group: node_exporter
+    recurse: yes
+    
 - name: Enable and start Node Exporter
   systemd:
     name: node_exporter
     state: started
     enabled: yes
+    daemon-reload: yes
+
+
+# Nginx Exporter section
+- name: Download nginx-exporter
+  ansible.builtin.get_url:
+    url: https://github.com/nginxinc/nginx-prometheus-exporter/releases/download/v1.4.2/nginx-prometheus-exporter_1.4.2_linux_amd64.tar.gz
+    dest: /tmp/nginx-exporter.tar.gz
+
+- name: Create nginx_exporter user
+  user:
+    name: nginx_exporter
+    system: yes
+    shell: /usr/sbin/nologin
+    comment: "Nginx Exporter service account"
+
+- name: Create config directory
+  ansible.builtin.file:
+    path: /opt/nginx-log-exporter/
+    state: directory
+    owner: nginx_exporter
+    group: nginx_exporter
+    mode: '0755'
+
+- name: Extract nginx-exporter
+  ansible.builtin.unarchive:
+    src: /tmp/nginx-exporter.tar.gz
+    dest: /opt/nginx-log-exporter/
+    remote_src: yes
+    owner: nginx_exporter
+    group: nginx_exporter
+
+- name: Create nginx-exporter systemd service
+  template:
+    src: templates/nginx-exporter.service.j2
+    dest: /etc/systemd/system/nginx-exporter.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: reload systemd
+
+- name: Enable and start nginx-exporter
+  systemd:
+    name: nginx-exporter
+    state: started
+    enabled: yes
+    daemon_reload: yes

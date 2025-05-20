@@ -1,0 +1,200 @@
+# ---
+# - name: Install reqs for Docker
+#   ansible.builtin.apt:
+#     name:
+#       - ca-certificates
+#       - curl
+#       - gnupg
+#       - lsb-release
+#       - software-properties-common
+#       - python3-pip
+#       - virtualenv
+#       - python3-setuptools
+#     state: latest
+#     update_cache: yes
+
+# - name: Check if Docker key exists
+#   command: apt-key list | grep Docker
+#   register: docker_key_check
+#   ignore_errors: yes
+#   changed_when: false
+
+# - name: Add the GPG key for Docker
+#   shell: 'curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg'
+#   when: docker_key_check.rc != 0
+
+# - name: Add the repository
+#   shell: 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bullseye  stable" | tee /etc/apt/sources.list.d/docker.list'
+#   when: docker_key_check.rc != 0
+
+# - name: Update and install docker
+#   ansible.builtin.apt:
+#     update_cache: yes
+#     name: docker
+#     state: latest
+
+# - name: Verify Docker service status
+#   command: systemctl is-active docker
+#   register: docker_status
+#   changed_when: false
+#   failed_when: docker_status.rc != 0
+
+# - name: Show Docker status
+#   debug:
+#     var: docker_status.stdout
+
+# - name: Ensure Docker is enabled and started
+#   systemd:
+#     name: docker
+#     enabled: yes
+#     state: started
+#     daemon_reload: yes
+
+
+
+# # - name: Update and install docker
+# #   ansible.builtin.apt:
+# #     name: pip
+# #     state: latest
+
+# - name: Install python docker package
+#   apt:
+#     name: python3-docker
+#     state: present
+
+# - name: Check if elasticsearch host exists
+#   assert:
+#     that:
+#       - "'elasticsearch' in hostvars"
+#       - "hostvars['elasticsearch'].ansible_host is defined"
+#     fail_msg: "Elasticsearch host not properly defined in inventory"
+
+# # - name: docker systemd
+# #   ansible.builtin.systemd_service:
+# #     daemon_reload: yes
+# #     enabled: yes
+# #     state: started
+# #     name: docker
+
+# - name: Create container
+#   docker_container:
+#     name: "Kibana"
+#     image: "kibana:8.6.2"
+#     ports:
+#     - "5601:5601"
+#     env:
+#       ELASTICSEARCH_HOSTS: "http://{{ elasticsearch }}:9200"
+#     state: started
+#     restart_policy: always
+
+# - name: docker container ls -la
+#   tags: container_ls
+#   shell: "docker container ls -la"
+#   register: container_info
+
+# - name: docker container ls -la result
+#   tags: container_ls
+#   debug:
+#     msg: "{{container_info.stdout_lines}}"
+
+---
+- name: Install reqs for Docker
+  ansible.builtin.apt:
+    name:
+      - ca-certificates
+      - curl
+      - gnupg
+      - lsb-release
+      - software-properties-common
+      - python3-pip
+      - virtualenv
+      - python3-setuptools
+    state: latest
+    update_cache: yes
+
+# - name: Add the GPG key for Docker
+#   shell: 'curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg'
+
+# - name: Add the repository
+#   shell: 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bullseye stable" | tee /etc/apt/sources.list.d/docker.list'
+
+# - name: Check if Docker key exists
+#   command: apt-key list | grep Docker
+#   register: docker_key_check
+#   ignore_errors: yes
+#   changed_when: false
+
+# - name: Add the GPG key for Docker
+#   shell: 'curl -fsSL https://download.docker.com/linux/debian/gpg | gpg --dearmor -o /usr/share/keyrings/docker-archive-keyring.gpg'
+#   #when: docker_key_check.rc != 0
+
+# - name: Add the repository
+#   shell: 'echo "deb [arch=amd64 signed-by=/usr/share/keyrings/docker-archive-keyring.gpg] https://download.docker.com/linux/debian bullseye  stable" | tee /etc/apt/sources.list.d/docker.list'
+#   #when: docker_key_check.rc != 0
+
+- name: Install prerequisites
+  apt:
+    name: [ca-certificates, curl, gnupg]
+    state: present
+    update_cache: yes
+
+- name: Add Docker GPG key (alternative way)
+  apt_key:
+    url: https://download.docker.com/linux/debian/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/debian {{ ansible_distribution_release }} stable"
+    state: present
+    filename: docker-ce
+
+- name: Update and install docker
+  ansible.builtin.apt:
+    update_cache: yes
+    name: docker-ce
+    state: latest
+
+
+# - name: Install the Docker module for Python
+#   pip:
+#     name: python3-docker
+#   notify: docker systemd
+
+- name: Install python docker package
+  apt:
+    name: python3-docker
+    state: present
+
+- name: docker systemd
+  ansible.builtin.systemd_service:
+    daemon_reload: yes
+    enabled: yes
+    state: started
+    name: docker
+
+- name: Create container
+  docker_container:
+    name: "Kibana"
+    image: "kibana:9.0.1"
+    ports:
+    - "5601:5601"
+    env:
+        #ELASTICSEARCH_HOSTS='["http://{{ hostvars['elasticsearch-host'].ansible_host }}:9200"]'
+        ELASTICSEARCH_HOSTS: "http://{{ elasticsearch }}:9200"
+        SERVER_PUBLICBASEURL: "http://{{ hostvars['kibana'].public_ip }}:5601"
+        SERVER_HOST: "0.0.0.0"
+        XPACK_REPORTING_KIBANASERVER_HOSTNAME: "localhost"
+        NODE_OPTIONS: "--max-old-space-size=2048"
+    state: started
+    restart_policy: always
+
+- name: docker container ls -la
+  tags: container_ls
+  shell: "docker container ls -la"
+  register: container_info
+
+- name: docker container ls -la result
+  tags: container_ls
+  debug:
+    msg: "{{container_info.stdout_lines}}"

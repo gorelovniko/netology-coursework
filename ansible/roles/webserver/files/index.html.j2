@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CourseWork Gorelov</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        h1 { color: #333; }
+        .info { margin-bottom: 10px; }
+    </style>
+</head>
+<body>
+    <h1>CourseWork Gorelov</h1>
+    <div class="info"><strong>Hostname:</strong> {{ ansible_hostname }}</div>
+    <div class="info"><strong>IP Address:</strong> {{ ansible_default_ipv4.address }}</div>
+</body>
+</html>

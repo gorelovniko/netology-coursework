@@ -1,0 +1,10 @@
+---
+# Для production лучше использовать ansible-vault
+prometheus_url: "http://prometheus:9090"
+
+grafana_provisioning_dir: "/etc/grafana/provisioning"
+grafana_admin_user: "admin"
+grafana_admin_password: "P@SSw0rd"
+grafana_url: "http://localhost:3000"
+node_exporter_dashboard_json: "https://grafana.com/api/dashboards/1860/revisions/28/download"  # ID стандартного дашборда Node-Exporter
+nginx_exporter: "https://grafana.com/api/dashboards/12708/revisions/latest/download"

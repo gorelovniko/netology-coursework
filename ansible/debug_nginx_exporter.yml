@@ -1,0 +1,21 @@
+- hosts: webservers_gp
+  tasks:
+    - name: Verify log permissions
+      ansible.builtin.command: ls -la /var/log/nginx/access.log
+      register: log_perms
+      changed_when: false
+
+    - name: Show log permissions
+      ansible.builtin.debug:
+        var: log_perms.stdout
+
+    - name: Test log access (as nginx-exporter)
+      ansible.builtin.command: >
+        sudo -u nginx-exporter tail -n 5 /var/log/nginx/access.log
+      register: log_test
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Show test result
+      ansible.builtin.debug:
+        var: log_test.stdout

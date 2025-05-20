@@ -1,0 +1,19 @@
+---
+# Docker образ Grafana
+grafana_image: grafana/grafana-oss
+grafana_version: latest
+grafana_container_name: grafana
+grafana_restart_policy: unless-stopped
+
+# Порт Grafana
+grafana_port: 3000
+
+# Директории
+grafana_data_dir: /var/lib/grafana
+grafana_config_dir: /etc/grafana
+
+dashboards_json: "https://grafana.com/api/dashboards/{{ item.id }}/revisions/{{ item.revision | default('latest') }}/download"
+
+# Управление установкой jq
+install_jq: true
+skip_jq_check: false

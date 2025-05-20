@@ -13,3 +13,5 @@ terraform.tfvars
 authorized_key.json
 */ssh-key/*
 cloud-init.yml
+nimda@*
+variables.tf.myexample

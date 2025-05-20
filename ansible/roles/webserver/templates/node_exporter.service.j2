@@ -1,0 +1,26 @@
+[Unit]
+Description=Node Exporter
+Documentation=https://github.com/prometheus/node_exporter
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=node_exporter
+Group=node_exporter
+Type=simple
+
+ExecStart=/opt/node_exporter-1.3.1.linux-amd64/node_exporter \
+  --web.listen-address=:9100 \
+  --collector.systemd \
+  --collector.processes \
+  --collector.filesystem \
+  --collector.cpu \
+  --collector.meminfo \
+  --collector.textfile.directory=/var/lib/node_exporter/textfile_collector
+
+Restart=always
+RestartSec=3
+SyslogIdentifier=node_exporter
+
+[Install]
+WantedBy=multi-user.target

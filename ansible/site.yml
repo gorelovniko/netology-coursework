@@ -1,25 +1,35 @@
 ---
-- hosts: webservers
-#  become: yes
+- hosts: webservers_gp
+  become: yes
   roles:
     - webserver
     - filebeat
+  tags: 'webservers'
 
-- hosts: prometheus
-#  become: yes
+
+- hosts: prometheus_gp
+  become: yes
   roles:
     - prometheus
+  tags: 'prometheus'
 
-- hosts: grafana
-#  become: yes
+
+- hosts: grafana_gp
+  become: yes
   roles:
     - grafana
-- hosts: elasticsearch
-#  become: yes
+  tags: 'grafana'
+
+
+- hosts: elasticsearch_gp
+  become: yes
   roles:
     - elasticsearch
+  tags: 'elasticsearch'
 
-- hosts: kibana
-#  become: yes
+
+- hosts: kibana_gp
+  become: yes
   roles:
     - kibana
+  tags: 'kibana'
