@@ -16,10 +16,43 @@
 
 ---------
 
+## Стандартные приготовления для работы с Yandex Cloud:
+* Зарегистрироваться в Yandex Cloud
+* Создайте платежный аккаунт (привязав банковскую карту)
+* Активация промокод от Netology
+* Создать сервисный аккаунт для работы с Yandex Cloud через terraform. Роль editor достаточно для всех манипуляций
+
+На этапе создания сервисного аккаунта первый и последний раз будет доступен authorized_key.json. Его надо сохранить к себе на ПК. В моём случае это папка с курсовой работой.
+
+Все дальнейшие действия будут через terraform и ansible.
+
+
+
+terraform init
+terraform apply
+yes
+
+
+nimda@vm1:~/Netology/netology-coursework$ ssh-agent -a nimda@ip_bastion
+SSH_AUTH_SOCK=nimda@ip_bastion; export SSH_AUTH_SOCK;
+SSH_AGENT_PID=3414661; export SSH_AGENT_PID;
+echo Agent pid 3414661;
+nimda@vm1:~/Netology/netology-coursework$ ssh-add ~/.ssh/yc_coursework
+Enter passphrase for /home/nimda/.ssh/yc_coursework: 
+Identity added: /home/nimda/.ssh/yc_coursework (my-yc-coursework)
+nimda@vm1:~/Netology/netology-coursework$
+
+
+nimda@vm1:~/Netology/netology-coursework$ ansible-playbook ansible/site.yml -i ansible/inventory.ini
+
+ansible/inventory.ini 
+
+
+
 ## Задача
 Ключевая задача — разработать отказоустойчивую инфраструктуру для сайта, включающую мониторинг, сбор логов и резервное копирование основных данных. Инфраструктура должна размещаться в [Yandex Cloud](https://cloud.yandex.com/).
 
-**Примечание**: в курсовой работе используется система мониторинга Prometheus. Вместо Prometheus вы можете использовать Zabbix. Задание для курсовой работы с использованием Zabbix находится по [ссылке](https://github.com/netology-code/fops-sysadm-diplom/blob/diplom-zabbix/README.md).
+
 
 **Перед началом работы над дипломным заданием изучите [Инструкция по экономии облачных ресурсов](https://github.com/netology-code/devops-materials/blob/master/cloudwork.MD).**   
 
