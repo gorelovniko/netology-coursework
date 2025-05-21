@@ -5,6 +5,9 @@ variable "yc_cloud_id" {
   description = "Yandex Cloud ID"
   type        = string
 
+  # Чтобы не вводить каждый раз при terraform apply. Берётся в ЛК YC
+  # default     = "ID вашего Yandex Cloud" 
+
 }
 
 #---------------------== ID папки, где будут создаваться ВМ ==---------------
@@ -12,6 +15,9 @@ variable "yc_folder_id" { #
   description = "Yandex Cloud Folder ID"
   type        = string
   
+   # Чтобы не вводить каждый раз при terraform apply. Берётся в ЛК YC
+  # default     = "ID вашей папки в Yandex Cloud" 
+
 }
 
 #-------------------------== Зона сети по умолчанию ==-----------------------
