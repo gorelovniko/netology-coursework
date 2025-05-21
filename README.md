@@ -174,3 +174,18 @@ Terraform настраивает [Security Groups](https://cloud.yandex.com/docs
 ![](img/YC-snapshot.JPG)  
 
 ---
+
+### Выводы
+
+* Playbook ansible может отработать некорректно с первого раза. Приходиться запускать повторно.
+
+* Если браузер кеширует ответы, может казаться, что балансировки нет. Нужно использовать:
+
+```bash
+
+curl -H "Cache-Control: no-cache" http://<IP-балансировщика>
+curl -v http://<IP-балансировщика>
+
+```
+
+----
