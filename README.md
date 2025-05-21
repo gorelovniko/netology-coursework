@@ -96,7 +96,7 @@ nimda@vm1:~/Netology/netology-coursework$ ansible-playbook ansible/site.yml -i a
 
 ### Сайт
 
-Роли ansible 'webserver' и 'filebeat' установит на созданные сервера все необходимые компоненты. А именно nginx, файлы сайта, nginx-reporter и node-exporter.
+Роли ansible 'webserver' и 'filebeat' установят на созданные сервера все необходимые компоненты. А именно nginx, файлы сайта, nginx-reporter и node-exporter.
 
 Я использовал сайт из одного из домашних заданий.
 
